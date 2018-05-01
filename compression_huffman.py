@@ -3,6 +3,7 @@ import re, typing, string
 import datetime, copy
 from collections import Counter
 import functools, os
+import array, contextlib
 
 class InvalidFileType(TypeError):
     pass
@@ -150,14 +151,42 @@ class Compress:
         print('parent value: ', frequencies[0].parent)
         print(TreeNode.flatten(frequencies[0]))
         full_hashing = dict([(i, ''.join(map(str, frequencies[0].lookup(i)))) for i in set(re.findall('[\w\W]', self._file_data))])
-
+        print('full hashing', full_hashing)
+        with Compress._write_binary('{}\n{}\n'.format(''.join(a+str(b) for a, b in _frequencies), ''.join(full_hashing[i] for i in self._file_data)), self.filename) as f:
+            pass
+        '''
         with open('{}{}'.format(''.join(str(getattr(datetime.datetime.now(), i)) for i in ['day', 'month', 'year', 'minute', 'hour', 'second']), self.filename), 'a') as f:
             f.write('{}\n{}\n'.format(''.join(a+str(b) for a, b in _frequencies), ''.join(full_hashing[i] for i in self._file_data)))
+        '''
+        '''
+        with Compress._main_file_creation('{}\n{}\n'.format(''.join(a+str(b) for a, b in _frequencies), ''.join(full_hashing[i] for i in self._file_data)), self.filename) as f:
+            pass
+        '''
 
         #print(Compress.print_structure(TreeNode.flatten(frequencies[0])))
     def __exit__(self, *args):
         pass
 
+    @staticmethod
+    @contextlib.contextmanager
+    def _main_file_creation(data, filename):
+        with open('{}{}'.format(''.join(str(getattr(datetime.datetime.now(), i)) for i in ['day', 'month', 'year', 'minute', 'hour', 'second']), filename), 'a') as f:
+            f.write(data)
+        yield
+
+    @staticmethod
+    @contextlib.contextmanager
+    def _write_binary(string_data, filename):
+        with open('{}{}.bin'.format(''.join(str(getattr(datetime.datetime.now(), i)) for i in ['day', 'month', 'year', 'minute', 'hour', 'second']), re.sub('\.\w+$', '', filename)), 'wb') as f:
+            f.write(string_data.encode('ascii'))
+        yield
+
+    @staticmethod
+    def _test_bin_array(result):
+        bin_array = array.array('B')
+        for i in re.findall('[\w\W]{8}', result):
+            bin_array.append(int(i[::-1]), 2)
+        return bin_array
 
     @classmethod
     def print_structure(cls, d):
@@ -175,14 +204,16 @@ class Compress:
 
 if __name__ == '__main__':
     def compress():
-        with Compress('largestexampleltr.txt') as c:
+        with Compress('secondtestnew.txt') as c:
             pass
 
     def decompress():
-        with Decompress('3042018251817largestexampleltr.txt') as c:
+        with Decompress('304201842215largestexampleltr.txt') as c:
             pass
-            
-    def size_comparison(a, b):
-        return os.path.getsize(a) - os.path.getsize(b)
 
-    decompress()
+    def size_comparison(a, b):
+        return '{}:{}, {}(compressed):{}'.format(a, len(open(a).read())*8, b, len(open(b).read()))
+
+    #print(size_comparison('largestexampleltr.txt', ))
+    #print(size_comparison('largestexampleltr.txt', '152018301116largestexampleltr.txt'))
+    compress()
