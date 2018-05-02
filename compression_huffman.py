@@ -15,6 +15,13 @@ class _TestingDecodeStreamError(Exception):
     def __str__(self):
         return "error with 'decode_stream'"
 
+def verify_binary_type(f):
+    def wrapper(cls, freq):
+        if not isinstance(freq, f.__annotations__['val']):
+            raise TypeError("Expecting an integer value for '{}'".format(f.__name__))
+        return f(cls, freq)
+    return wrapper
+
 class TreeNode:
     def __init__(self, *args):
         self.left, self.right = args
@@ -167,6 +174,16 @@ class Compress:
     def __exit__(self, *args):
         pass
 
+    @classmethod
+    def _to_Binary(cls, value:int, current = None):
+        if not value:
+            return '0' if not current else ''.join(map(str, current))
+        _val = max(i for i in range(value) if pow(2, i) <= value) if value else 0
+
+        return cls._to_Binary(value-pow(2, _val), [1]+([0]*_val) if not current else [1 if len(current)-1 - i == _val else a for i, a in enumerate(current)])
+
+
+
     @staticmethod
     @contextlib.contextmanager
     def _main_file_creation(data, filename):
@@ -216,4 +233,10 @@ if __name__ == '__main__':
 
     #print(size_comparison('largestexampleltr.txt', ))
     #print(size_comparison('largestexampleltr.txt', '152018301116largestexampleltr.txt'))
-    compress()
+    def test_toBinary():
+        import pickle
+        for a, b in pickle.load(open('binary_checks.txt', 'rb')):
+            assert Compress._to_Binary(int(a)) == b, '{} -> {}, got {}'.format(a, b, Compress._to_Binary(a))
+        print('all test cases passed')
+
+    test_toBinary()
